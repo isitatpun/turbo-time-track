@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, CheckCircle, Loader2, UserCog } from 'lucide-react';
+import { ShieldCheck, CheckCircle, Loader2, Trash2, Ban, Check } from 'lucide-react';
 
 function UserManagement() {
   const { user: currentUser } = useAuth(); 
@@ -63,6 +63,29 @@ function UserManagement() {
     }
   }
 
+  // --- 4. Delete User ---
+  const handleDeleteUser = async (userId) => {
+    // strict confirmation
+    if (!window.confirm("Are you sure you want to PERMANENTLY DELETE this user? This action cannot be undone.")) {
+        return;
+    }
+
+    try {
+        const { error } = await supabase
+            .schema('facility_management')
+            .from('user_roles')
+            .delete()
+            .eq('id', userId);
+
+        if (error) throw error;
+        
+        // Remove deleted user from local state UI immediately
+        setUsers(users.filter(u => u.id !== userId));
+    } catch (error) {
+        alert("Error deleting user: " + error.message);
+    }
+  }
+
   if (loading) return <div className="p-8 text-center text-gray-500">Loading Users...</div>;
 
   return (
@@ -117,31 +140,48 @@ function UserManagement() {
                   </td>
 
                   <td className="p-4">
-                     {u.is_verified ? (
-                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-50 text-green-600 border border-green-200">
-                         <CheckCircle size={14} /> Verified
-                       </span>
-                     ) : (
-                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-600 border border-orange-200">
-                         <Loader2 size={14} className="animate-spin" /> Pending
-                       </span>
-                     )}
+                      {u.is_verified ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-50 text-green-600 border border-green-200">
+                          <CheckCircle size={14} /> Verified
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-600 border border-orange-200">
+                          <Loader2 size={14} className="animate-spin" /> Pending
+                        </span>
+                      )}
                   </td>
 
                   <td className="p-4 text-right">
                     {isMe ? (
                       <span className="text-gray-300 italic text-xs font-medium pr-2">Protected</span>
                     ) : (
-                      <button
-                        onClick={() => handleToggleStatus(u.id, u.is_verified)}
-                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition shadow-sm ${
-                          u.is_verified 
-                            ? "text-gray-500 hover:text-red-600 hover:bg-red-50 border border-gray-200 hover:border-red-200" 
-                            : "bg-[#00bfa5] text-white hover:bg-[#00a690] border border-transparent"
-                        }`}
-                      >
-                        {u.is_verified ? "Suspend" : "Approve"}
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        {/* 1. Approve / Suspend Button */}
+                        <button
+                          onClick={() => handleToggleStatus(u.id, u.is_verified)}
+                          title={u.is_verified ? "Suspend User" : "Approve User"}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm ${
+                            u.is_verified 
+                              ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100" 
+                              : "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                          }`}
+                        >
+                          {u.is_verified ? (
+                            <><Ban size={14} /> Suspend</>
+                          ) : (
+                            <><Check size={14} /> Approve</>
+                          )}
+                        </button>
+
+                        {/* 2. Delete Button */}
+                        <button
+                          onClick={() => handleDeleteUser(u.id)}
+                          title="Delete User"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition shadow-sm"
+                        >
+                          <Trash2 size={14} /> Delete
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -153,6 +193,5 @@ function UserManagement() {
     </div>
   );
 }
-
 
 export default UserManagement;
