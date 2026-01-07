@@ -34,10 +34,10 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // --- GATEKEEPER FUNCTION (UPDATED) ---
+  // --- GATEKEEPER FUNCTION (STRICT APPROVAL MODE) ---
   const checkVerificationAndSetUser = async (authUser) => {
     try {
-      // 1. ดึงข้อมูล (ใช้ maybeSingle เพื่อไม่ให้ Error แดงถ้ายัังไม่มีข้อมูล)
+      // 1. Check if user exists in DB
       const { data, error } = await supabase
         .schema('facility_management')
         .from('user_roles')
@@ -45,16 +45,15 @@ export const AuthProvider = ({ children }) => {
         .eq('id', authUser.id)
         .maybeSingle();
 
-      // ถ้า error จริงๆ (ไม่ใช่แค่หาไม่เจอ) ให้ log
       if (error && error.code !== 'PGRST116') {
-         console.error("DB Read Error:", error);
+          console.error("DB Read Error:", error);
       }
 
-      // --- กรณี: ยังไม่มีข้อมูลในตาราง user_roles ---
+      // --- CASE 1: New User (First time login) ---
       if (!data) {
-        console.log("New user detected. Checking domain for SSO...");
+        console.log("New user detected. Creating PENDING profile...");
 
-        // ตรวจสอบ Domain (@turbo.co.th)
+        // Optional: Keep domain check if you want to restrict who can request access
         const email = authUser.email || '';
         if (!email.endsWith('@turbo.co.th')) {
           await supabase.auth.signOut();
@@ -62,9 +61,9 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        // 2. สร้างข้อมูลด้วย UPSERT (แก้ปัญหา Duplicate Key)
+        // 2. Create Profile with FALSE verification
         try {
-          const { data: newUser, error: insertError } = await supabase
+          const { error: insertError } = await supabase
             .schema('facility_management')
             .from('user_roles')
             .upsert(
@@ -72,18 +71,22 @@ export const AuthProvider = ({ children }) => {
                 id: authUser.id, 
                 email: email,
                 role: 'user',        
-                is_verified: true    
+                is_verified: false  // <--- CHANGED: Default is now FALSE for everyone
               },
-              { onConflict: 'id', ignoreDuplicates: false } // ทับข้อมูลเดิมไปเลยถ้ามีปัญหาค้างเก่า
-            )
-            .select()
-            .single();
+              { onConflict: 'id', ignoreDuplicates: false } 
+            );
 
           if (insertError) throw insertError;
 
-          // 3. Set State (Success)
-          setUser(authUser);
-          setRole(newUser?.role || 'user');
+          // 3. FORCE LOGOUT IMMEDIATELY
+          // Even if Google login was successful, we kick them out here because they are not verified.
+          await supabase.auth.signOut();
+          
+          alert("Registration successful!\n\nYour account is pending approval. Please contact the Master Admin to activate your account.");
+          
+          // Ensure state is clear
+          setUser(null);
+          setRole(null);
 
         } catch (err) {
           console.error("Auto-create failed:", err);
@@ -93,13 +96,17 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // --- กรณี: มีข้อมูลอยู่แล้ว ---
+      // --- CASE 2: Existing User ---
       if (data.is_verified) {
+        // User is Approved -> Let them in
         setUser(authUser);
         setRole(data.role || 'user');
       } else {
+        // User exists but is NOT Approved -> Kick them out
         await supabase.auth.signOut();
-        alert("Your account is pending approval.\nPlease contact the Master Admin.");
+        alert("Access Denied: Your account is still pending approval.\nPlease contact the Master Admin.");
+        setUser(null);
+        setRole(null);
       }
     } catch (err) {
       console.error("Auth Check Critical Error:", err);
@@ -109,7 +116,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Login ด้วย Google
+  // Login with Google
   const loginWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
