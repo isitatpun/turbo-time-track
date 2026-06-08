@@ -458,7 +458,7 @@ const ShiftPage = () => {
                                         />
 
                                         {/* Duration */}
-                                        <span className="text-xs text-[#002D72] font-bold bg-blue-50 border border-blue-100 px-2 py-1 rounded shrink-0 min-w-[52px] text-center">
+                                        <span className="text-xs text-[#002D72] font-bold bg-blue-50 border border-blue-100 px-2 py-1 rounded shrink-0 min-w-13 text-center">
                                             {dur.text}
                                             {dur.isOvernight && <span className="block text-[9px] text-purple-600">+1 day</span>}
                                         </span>
