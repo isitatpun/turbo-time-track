@@ -197,7 +197,7 @@ export default function VisitorPage() {
         <>
           {/* ================= PART 1: BEAUTIFIED SUMMARY VIEW ================= */}
           <section className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-linear-to-r from-gray-50 to-white">
               <h2 className="text-lg font-bold text-gray-800">Monthly Summary</h2>
               
               <div className="flex bg-gray-100 p-1 rounded-lg gap-1">
@@ -210,7 +210,7 @@ export default function VisitorPage() {
             <div className="p-6">
                {/* VIEW 1: CHART */}
                {summaryView === 'chart' && (
-                 <div className="flex flex-col md:flex-row h-[400px] w-full items-center">
+                 <div className="flex flex-col md:flex-row h-100 w-full items-center">
                     <div className="w-full md:w-1/2 h-full relative flex items-center justify-center">
                       {summaryData.length > 0 ? (
                         <>
@@ -256,7 +256,7 @@ export default function VisitorPage() {
                             <div key={index} className="flex items-center justify-between group hover:bg-gray-50 p-2 rounded-lg transition-colors cursor-default">
                               <div className="flex items-center gap-3">
                                 <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                                <span className="text-sm text-gray-700 font-medium truncate max-w-[200px]" title={item.name}>{item.name}</span>
+                                <span className="text-sm text-gray-700 font-medium truncate max-w-50" title={item.name}>{item.name}</span>
                               </div>
                               <div className="flex items-center gap-3">
                                 <span className="text-sm font-bold text-gray-800">{item.value}</span>
@@ -273,7 +273,7 @@ export default function VisitorPage() {
                {/* VIEW 2: CARDS */}
                {summaryView === 'cards' && (
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="relative overflow-hidden bg-gradient-to-br from-[#002D72] to-[#004494] text-white p-6 rounded-2xl shadow-lg shadow-blue-900/20">
+                    <div className="relative overflow-hidden bg-linear-to-br from-[#002D72] to-[#004494] text-white p-6 rounded-2xl shadow-lg shadow-blue-900/20">
                        <div className="relative z-10">
                          <p className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-2">Total Visitors</p>
                          <p className="text-5xl font-bold">{stats.total}</p>
@@ -363,7 +363,7 @@ export default function VisitorPage() {
                   <select 
                     value={filterHost}
                     onChange={(e) => setFilterHost(e.target.value)}
-                    className="bg-transparent text-sm text-gray-700 outline-none cursor-pointer border-l pl-2 border-gray-200 max-w-[150px]"
+                    className="bg-transparent text-sm text-gray-700 outline-none cursor-pointer border-l pl-2 border-gray-200 max-w-37.5"
                   >
                     <option value="All">All Hosts</option>
                     {uniqueHosts.map(h => <option key={h} value={h}>{h}</option>)}

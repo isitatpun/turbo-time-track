@@ -139,11 +139,13 @@ const DetailsPage = () => {
 
             summaryMap[emp.id].total_days++;
 
-            const shift = shifts.find(s => 
-                (s.employee_id === emp.id || s.person_id === emp.person_id) && 
-                new Date(s.active_date) <= d && 
-                (!s.expiry_date || new Date(s.expiry_date) >= d)
-            );
+            const shiftBase = s =>
+                (s.employee_id === emp.id || s.person_id === emp.person_id) &&
+                new Date(s.active_date) <= d &&
+                (!s.expiry_date || new Date(s.expiry_date) >= d);
+            const shift =
+                shifts.find(s => shiftBase(s) && s.day_type === dayType) ||
+                shifts.find(s => shiftBase(s) && (!s.day_type || s.day_type === 'All'));
 
             const log = logs.find(l => l.person_no === emp.person_id && l.date === currentStr);
             const nextLog = logs.find(l => l.person_no === emp.person_id && l.date === nextDayStr);

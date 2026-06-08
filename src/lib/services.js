@@ -162,13 +162,13 @@ export const getAllShiftsService = async () => {
 };
 
 // [UPDATED] Check Overlap Logic
-export const checkShiftOverlapService = async (empId, startDate, endDate, newStart, newEnd, excludeId = null) => {
+export const checkShiftOverlapService = async (empId, startDate, endDate, _newStart, _newEnd, excludeId = null, newDayType = 'All') => {
   let query = supabase
     .from('shifts')
-    .select('id')
+    .select('id, day_type')
     .eq('employee_id', empId)
     // Date Overlap Logic: (StartA <= EndB) AND (EndA >= StartB)
-    .lte('active_date', endDate || '2099-12-31') 
+    .lte('active_date', endDate || '2099-12-31')
     .or(`expiry_date.is.null,expiry_date.gte.${startDate}`);
 
   // If editing, exclude the current shift ID from the check
@@ -178,15 +178,19 @@ export const checkShiftOverlapService = async (empId, startDate, endDate, newSta
 
   const { data, error } = await query;
   if (error) throw error;
-  
-  return data.length > 0; 
+
+  // Only block if day_types conflict: both 'All', one is 'All', or both are the same specific type
+  return data.some(s =>
+    s.day_type === 'All' || newDayType === 'All' || s.day_type === newDayType
+  );
 };
 
-// Add Shift
+// Add Shift (accepts a single object or an array for bulk insert)
 export const addShiftService = async (shiftData) => {
+  const rows = Array.isArray(shiftData) ? shiftData : [shiftData];
   const { data, error } = await supabase
     .from('shifts')
-    .insert([shiftData])
+    .insert(rows)
     .select();
 
   if (error) throw error;
