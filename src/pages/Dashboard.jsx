@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Users, ShieldCheck, Sprout, SprayCan, Utensils, Filter, Loader2 } from 'lucide-react';
+import { Users, ShieldCheck, Sprout, SprayCan, Utensils, Car, Filter, Loader2 } from 'lucide-react';
 // FIX: Import from services, NOT mockData
 import { getActiveEmployeesService } from '../lib/services'; 
 
 // FIX: Define DEPARTMENTS here since we deleted mockData
-const DEPARTMENTS = ['Security', 'Gardener', 'Housekeeper', 'Dishwasher'];
+const DEPARTMENTS = ['Security', 'Gardener', 'Housekeeper', 'Dishwasher', 'Driver'];
 
 const Dashboard = () => {
   // State
@@ -51,6 +51,7 @@ const Dashboard = () => {
         case 'Gardener': return <Sprout className="w-8 h-8 text-green-600" />;
         case 'Housekeeper': return <SprayCan className="w-8 h-8 text-purple-600" />;
         case 'Dishwasher': return <Utensils className="w-8 h-8 text-orange-600" />;
+        case 'Driver': return <Car className="w-8 h-8 text-yellow-600" />;
         default: return <Users className="w-8 h-8 text-gray-400" />;
     }
   };
@@ -62,6 +63,7 @@ const Dashboard = () => {
         case 'Gardener': return 'bg-green-100';
         case 'Housekeeper': return 'bg-purple-100';
         case 'Dishwasher': return 'bg-orange-100';
+        case 'Driver': return 'bg-yellow-100';
         default: return 'bg-gray-100';
     }
   };
@@ -83,7 +85,7 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
         {stats.map((dept) => (
             <div key={dept.name} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden flex items-center justify-between hover:shadow-md transition-shadow">
                 <div>

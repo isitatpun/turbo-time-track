@@ -1,23 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, CalendarPlus, Save, X, AlertCircle, Loader2 } from 'lucide-react';
-import { getAllEmployeesService, updateEmployeeService } from '../lib/services'; // IMPORT SERVICES
+import { Edit, CalendarPlus, Save, X, AlertCircle, Loader2, UserPlus } from 'lucide-react';
+import { getAllEmployeesService, updateEmployeeService, addEmployeeService } from '../lib/services';
+import { useAuth } from '../context/AuthContext';
 
-const DEPARTMENTS = ['Security', 'Gardener', 'Housekeeper', 'Dishwasher'];
+const DEPARTMENTS = ['Security', 'Gardener', 'Housekeeper', 'Dishwasher', 'Driver'];
 
 const EmployeePage = () => {
+  const { role } = useAuth();
+  const canEdit = role === 'admin' || role === 'master_admin';
+
   // --- STATE ---
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [filterDept, setFilterDept] = useState('All');
   const [showActiveOnly, setShowActiveOnly] = useState(true);
-  
-  // Modal State
+
+  // Edit Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmp, setEditingEmp] = useState(null);
   const [formData, setFormData] = useState({ effective_date: '', resignation_date: '' });
   const [isIndefinite, setIsIndefinite] = useState(false);
-  const [isSaving, setIsSaving] = useState(false); // New loading state for Save button
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Add Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addForm, setAddForm] = useState({ person_id: '', name: '', department: '' });
+  const [isAdding, setIsAdding] = useState(false);
 
   // --- 1. LOAD DATA ---
   const loadEmployees = async () => {
@@ -108,6 +117,31 @@ const EmployeePage = () => {
     }
   };
 
+  // --- ADD HANDLER ---
+  const handleAdd = async () => {
+    if (!addForm.person_id.trim()) return alert('Please enter a Person ID');
+    if (!addForm.name.trim()) return alert('Please enter a Name');
+    if (!addForm.department) return alert('Please select a Department');
+
+    setIsAdding(true);
+    try {
+      await addEmployeeService({
+        person_id: addForm.person_id.trim(),
+        name: addForm.name.trim(),
+        department: addForm.department,
+        effective_date: null,
+        resignation_date: null,
+      });
+      setIsAddModalOpen(false);
+      setAddForm({ person_id: '', name: '', department: '' });
+      await loadEmployees();
+    } catch (error) {
+      alert('Failed to add employee: ' + error.message);
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
   if (loading && employees.length === 0) {
       return <div className="p-8 text-center text-gray-500">Loading Employees...</div>;
   }
@@ -116,6 +150,14 @@ const EmployeePage = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-[#002D72]">Employee Management</h1>
+        {canEdit && (
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 bg-[#FA4786] text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-pink-600 shadow-sm transition-colors"
+          >
+            <UserPlus className="w-4 h-4" /> Add Employee
+          </button>
+        )}
       </div>
 
       {/* --- FILTER SECTION --- */}
@@ -235,6 +277,70 @@ const EmployeePage = () => {
             </table>
         </div>
       </div>
+
+      {/* --- ADD EMPLOYEE MODAL --- */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-[#002D72]">Add New Employee</h3>
+                <p className="text-gray-500 text-sm mt-1">Person ID ต้องตรงกับที่เครื่อง scanner ใช้</p>
+              </div>
+              <button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-red-500"><X /></button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Person ID <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  placeholder="e.g. EMP001"
+                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-[#002D72] font-mono"
+                  value={addForm.person_id}
+                  onChange={e => setAddForm({ ...addForm, person_id: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Name <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  placeholder="Full name"
+                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-[#002D72]"
+                  value={addForm.name}
+                  onChange={e => setAddForm({ ...addForm, name: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Department <span className="text-red-500">*</span></label>
+                <select
+                  className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-[#002D72]"
+                  value={addForm.department}
+                  onChange={e => setAddForm({ ...addForm, department: e.target.value })}
+                >
+                  <option value="">-- Select Department --</option>
+                  {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+
+              <p className="text-xs text-gray-400 bg-gray-50 p-3 rounded-lg">
+                Effective Date จะกรอกในขั้นตอนถัดไป — พนักงานจะขึ้นที่ Section "Pending Setup" ก่อน
+              </p>
+
+              <button
+                onClick={handleAdd}
+                disabled={isAdding}
+                className="w-full bg-[#002D72] text-white py-3 rounded-xl font-bold text-lg hover:bg-blue-900 shadow-lg transition-all flex justify-center items-center gap-2 disabled:opacity-50"
+              >
+                {isAdding ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserPlus className="w-5 h-5" />}
+                {isAdding ? 'Adding...' : 'Add Employee'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- UNIFIED MODAL --- */}
       {isModalOpen && (

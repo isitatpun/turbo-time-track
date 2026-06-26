@@ -9,7 +9,7 @@ import {
     fetchDateDim 
 } from '../lib/services'; 
 
-const DEPARTMENTS = ['Security', 'Gardener', 'Housekeeper', 'Dishwasher'];
+const DEPARTMENTS = ['Security', 'Gardener', 'Housekeeper', 'Dishwasher', 'Driver'];
 
 const DetailsPage = () => {
   // --- HELPER: Calculate Previous Week (Mon-Sun) ---

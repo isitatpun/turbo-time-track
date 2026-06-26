@@ -209,6 +209,15 @@ export const updateShiftService = async (id, shiftData) => {
   return data;
 };
 
+// Delete Shift
+export const deleteShiftService = async (id) => {
+  const { error } = await supabase
+    .from('shifts')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+};
+
 // ==========================================
 // 4. Date Dimension (Holidays)
 // ==========================================

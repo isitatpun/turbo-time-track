@@ -1,23 +1,29 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, X, AlertCircle, Clock, Edit, Loader2, Trash2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import {
     getAllShiftsService,
     getAllEmployeesService,
     addShiftService,
     updateShiftService,
+    deleteShiftService,
     checkShiftOverlapService
 } from '../lib/services';
 
-const DEPARTMENTS = ['Security', 'Gardener', 'Housekeeper', 'Dishwasher'];
+const DEPARTMENTS = ['Security', 'Gardener', 'Housekeeper', 'Dishwasher', 'Driver'];
 const DAY_TYPE_OPTIONS = ['All', 'Workday', 'Weekend', 'Holiday_HQ'];
 const DAY_TYPE_LABELS = { All: 'All Days', Workday: 'Workday', Weekend: 'Weekend', Holiday_HQ: 'Holiday (HQ)' };
 
 const ShiftPage = () => {
+  const { role } = useAuth();
+  const isAdmin = role === 'admin' || role === 'master_admin';
+
   // --- STATE ---
   const [shifts, setShifts] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterDept, setFilterDept] = useState('All');
@@ -111,6 +117,16 @@ const ShiftPage = () => {
       ...newShift,
       dayShifts: newShift.dayShifts.filter((_, i) => i !== index)
     });
+  };
+
+  const handleDeleteShift = async (id) => {
+    try {
+      await deleteShiftService(id);
+      setConfirmDeleteId(null);
+      await loadData();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // --- 4. HANDLERS ---
@@ -334,9 +350,35 @@ const ShiftPage = () => {
                                 }
                             </td>
                             <td className="p-4 text-center">
-                                <button onClick={() => handleEditClick(shift)} className="p-2 text-gray-400 hover:text-[#002D72] hover:bg-gray-100 rounded-full transition-colors">
-                                    <Edit className="w-4 h-4" />
-                                </button>
+                                <div className="flex items-center justify-center gap-1">
+                                    <button onClick={() => handleEditClick(shift)} className="p-2 text-gray-400 hover:text-[#002D72] hover:bg-gray-100 rounded-full transition-colors">
+                                        <Edit className="w-4 h-4" />
+                                    </button>
+                                    {isAdmin && confirmDeleteId !== shift.id && (
+                                        <button
+                                            onClick={() => setConfirmDeleteId(shift.id)}
+                                            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                    {isAdmin && confirmDeleteId === shift.id && (
+                                        <div className="flex items-center gap-1">
+                                            <button
+                                                onClick={() => setConfirmDeleteId(null)}
+                                                className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteShift(shift.id)}
+                                                className="text-xs text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded font-bold"
+                                            >
+                                                Delete?
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </td>
                         </tr>
                     );

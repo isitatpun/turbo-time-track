@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Save, UserPlus, AlertTriangle, Loader2, Edit3, ArrowRight, XCircle } from 'lucide-react';
 import { getAllEmployeesService, addManualEntry, fetchLogs } from '../lib/services'; 
 
-const DEPARTMENTS = ['Security', 'Gardener', 'Housekeeper', 'Dishwasher'];
+const DEPARTMENTS = ['Security', 'Gardener', 'Housekeeper', 'Dishwasher', 'Driver'];
 
 const ManualEntryPage = () => {
   // --- STATE ---
